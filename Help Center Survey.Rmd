@@ -56,7 +56,7 @@ ggplot(longdata, aes(x = day, color = time, fill = time)) +
   facet_wrap(vars(course), drop = FALSE)
 
 ggsave(file= "BarChart_ByCourse.pdf", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "pdf")
-ggsave(file= "BarChart_ByCourse.png", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "png"
+ggsave(file= "BarChart_ByCourse.png", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "png")
 ```
 
 Heatmap of times across the days, total for all courses.
