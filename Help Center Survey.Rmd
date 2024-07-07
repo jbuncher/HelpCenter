@@ -1,0 +1,89 @@
+---
+title: "Help Center Survey Results"
+author: "John B. Buncher"
+date: "2024-06-11"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+```
+
+Import data, fix column names, make the data into "long" format, and make the days & times factors so they have an ordering.
+```{r}
+data <- read.csv("~/Teaching/NDSU/Department/Labs & TAs/Help Center Survey/Help Center Scheduling Survey (Responses) - Form Responses 1.csv", na.string = "")
+names <- c("timestamp", "course", "8 AM", "9 AM", "10 AM", "11 AM", "Noon", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM")
+colnames(data) <- names
+
+longdata <-  data %>% pivot_longer(cols = '8 AM':'5 PM', names_to = "time", values_to = "day", values_drop_na = "TRUE") %>%
+                   separate_rows("day", sep = ", ")
+
+longdata$time <- factor(longdata$time, levels = c("8 AM", "9 AM", "10 AM", "11 AM", "Noon", "1 PM", "2 PM", "3 PM", "4 PM",  "5 PM"), ordered = TRUE)
+longdata$day <- factor(longdata$day, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"), ordered = TRUE)
+```
+
+Make a dataset where we have counts for each unique course/day/time entry. This is needed for the heatmaps (or at least I couldn't figure out how to do it without this).
+```{r}
+counted <- longdata %>% count(course, day, time)
+wide_count <- counted %>% pivot_wider(names_from = c("time"),
+                                      values_from = "n")
+total_counted <- counted %>% group_by(day, time) %>% summarize(Count = sum(n))
+```
+
+Bar chart of times for each day totaled across all courses.
+```{r}
+ggplot(longdata, aes(x = day, color = time, fill = time)) +
+  geom_bar(position = "dodge") + 
+  theme(axis.title.x = element_blank()) +
+  theme(axis.title.y = element_blank()) +
+  theme(legend.title = element_blank()) +
+  labs(title = "All Courses")
+
+ggsave(file= "BarChart_Total.pdf", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "pdf")
+ggsave(file= "BarChart_Total.png", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "png")
+```
+
+Bar chart of times for each day, broken down by course.
+```{r}
+ggplot(longdata, aes(x = day, color = time, fill = time)) +
+  geom_bar(position = "dodge") + 
+  theme(axis.title.x = element_blank()) +
+  theme(axis.title.y = element_blank()) +
+  theme(legend.title = element_blank()) +
+  theme(axis.text.x=element_text(size=6, angle = 45, hjust = 1)) + 
+  facet_wrap(vars(course), drop = FALSE)
+
+ggsave(file= "BarChart_ByCourse.pdf", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "pdf")
+ggsave(file= "BarChart_ByCourse.png", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "png")
+```
+
+Heatmap of times across the days, total for all courses.
+```{r}
+ggplot(total_counted, aes(day, time, fill = Count)) + 
+  geom_bin_2d() +
+  theme_light() +
+  theme(axis.title.x = element_blank()) + 
+  theme(axis.title.y = element_blank()) +
+  labs(title = "All Courses") +
+  theme(legend.title = element_blank())
+
+ggsave(file= "Heatmap_Total.pdf", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "pdf")
+ggsave(file= "Heatmap_Total.png", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "png")
+```
+
+Heatmap of times across the days, broken down by course.
+```{r}
+ggplot(counted, aes(day, time, fill = n)) + 
+  geom_bin_2d() +
+  theme_light() +
+  theme(axis.title.x = element_blank()) + 
+  theme(axis.title.y = element_blank()) +
+  theme(legend.title = element_blank()) +
+  theme(axis.text.x=element_text(size=6, angle = 45, hjust = 1)) + 
+  facet_wrap(vars(course), drop = FALSE)
+
+ggsave(file= "Heatmap_ByCourse.pdf", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "pdf")
+ggsave(file= "Heatmap_ByCourse.png", plot= last_plot(), dpi=300, width = 9, height = 6, units = "in", device = "png")
+```
